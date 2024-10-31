@@ -118,4 +118,5 @@ venv.bak/
 # Apple macOS
 .DS_Store
 bench/
-data/
+
+*.csv
