@@ -1,5 +1,6 @@
 import json
 import logging
+from functools import partial
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -10,6 +11,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.metrics import f1_score
 from sklearn.neighbors import KNeighborsClassifier
+from sktime.classification.dictionary_based import WEASEL
+from sktime.classification.hybrid import HIVECOTEV2
+from sktime.classification.interval_based import TimeSeriesForestClassifier
 from xgboost import XGBClassifier
 
 from ..utils.loaders import (
@@ -46,9 +50,9 @@ MODEL_REGISTRY = {'rff': RandomForestClassifier,
                   'xgb': XGBClassifier,
                   'knn': KNeighborsClassifier,
                   'gaussian': GaussianProcessClassifier,
-                  'hc2': None,
-                  'timeforest': None,
-                  'weasel': None
+                  'hc2': partial(HIVECOTEV2, time_limit_in_minutes=10),
+                  'timeforest': TimeSeriesForestClassifier,
+                  'weasel': WEASEL
                   }
 
 
@@ -93,6 +97,7 @@ def train(dataset_dict: Dict[str, pd.DataFrame], model: str) -> float:
 @click.option("--wof_start", type=int, required=False)
 @click.option("--wof_end", type=int, required=False)
 @click.option("--wof_drop", type=bool, required=False)
+@click.option("--occurency_vector_normalise", type=bool, required=False)
 def main(data_path: Path,
          output_path: Path,
          loader: str,
@@ -102,6 +107,7 @@ def main(data_path: Path,
          wof_start: Optional[int],
          wof_end: Optional[int],
          wof_drop: Optional[bool],
+         occurency_vector_normalise: Optional[bool],
          ) -> None:
 
     seed_everything(seed)
@@ -110,7 +116,14 @@ def main(data_path: Path,
     for cv_split in range(5):
         logger.info(f"Running Split {cv_split}/5")
 
-        dataset_dict = load_data(data_path, loader, preprocessor, cv_split=cv_split, wof_start=wof_start, wof_end=wof_end, wof_drop=wof_drop)
+        padding = True
+        if model in ['hc2', 'timeforest', 'weasel']:
+            padding = False
+
+            if loader != 'whole_set' or preprocessor != 'sequence':
+                raise ValueError(f"Incompatible loader {loader} or preprocessor {preprocessor} for model {model}.")
+
+        dataset_dict = load_data(data_path, loader, preprocessor, cv_split=cv_split, padding=padding, wof_start=wof_start, wof_end=wof_end, wof_drop=wof_drop, occurency_vector_normalise=occurency_vector_normalise)
         f1_result = train(dataset_dict, model)
         logger.info(f"Finished Running Split {cv_split}/5 F1: {f1_result:.3f}")
 

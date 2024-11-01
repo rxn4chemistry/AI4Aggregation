@@ -8,6 +8,7 @@ from datasets import Dataset, DatasetDict
 from more_itertools import chunked
 from torchmetrics.functional.classification import binary_f1_score
 from transformers import (
+    AutoConfig,
     AutoModelForSequenceClassification,
     AutoTokenizer,
     DataCollatorWithPadding,
@@ -22,6 +23,7 @@ from ..utils.utils import seed_everything, split_peptide_set
 def load_data(data_path: Path, tokenizer: AutoTokenizer, cv_split: int = 0, seed: int = 3245) -> DatasetDict:
 
     dataset = make_whole_peptide_set(data_path)
+    dataset['labels'] = dataset['aggregation'].astype(int)
     dataset_dict = split_peptide_set(dataset, val=True, cv_split=cv_split, seed=seed)
 
     dataset_dict_hf = DatasetDict({key : Dataset.from_pandas(df) for key, df in dataset_dict.items()})
@@ -36,10 +38,16 @@ def compute_metrics(eval_pred):
     return {'f1': binary_f1_score(torch.Tensor(predictions), torch.Tensor(labels))}
 
 def train(data_path: Path, output_path: Path, cv_split: int, model_name: str, pretrained: bool, seed: int):
+
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2, problem_type='single_label_classification')
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
+    if pretrained:
+        model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2, problem_type='single_label_classification')
+    else:
+        model_config = AutoConfig.from_pretrained(model_name)
+        model = AutoModelForSequenceClassification.from_config(model_config)
+    
     dataset = load_data(data_path, tokenizer, cv_split=cv_split, seed=seed)
 
     training_args = TrainingArguments(
@@ -54,7 +62,6 @@ def train(data_path: Path, output_path: Path, cv_split: int, model_name: str, pr
         save_total_limit=2,
         load_best_model_at_end=True,
     )
-
 
     trainer = Trainer(
         model=model,
