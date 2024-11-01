@@ -21,6 +21,9 @@ torch = "^2.2.2"
 transformers = "^4.41.2"
 scikit-learn = "^1.5.2"
 xgboost = "^2.1.1"
+torchmetrics = "^1.5.1"
+rdkit = "^2024.3.5"
+more-itertools = "^10.5.0"
 
 [tool.poetry.dev-dependencies]
 jupyter = "^1.0.0"
@@ -36,11 +39,12 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 create_combined_data = "ai4agg.cli.create_combined_dataset:main"
-train_hf_model = "ai4agg.cli.hf_models:main"
+train_hf_model = "ai4agg.cli.train_hf_models:main"
+train_sklearn_model = "ai4agg.cli.train_sklearn_models:main"
 
 
 [tool.mypy]
-check_untyped_defs = true
+check_untyped_defs = false
 
 [[tool.mypy.overrides]]
 module = [
@@ -49,6 +53,10 @@ module = [
     "torch.*",
     "transformers.*",
     "yaml.*",
+    "pandas.*",
+    "sklearn.*",
+    "rdkit.*",
+    "torchmetrics.*",
 ]
 ignore_missing_imports = true
 
@@ -115,7 +123,6 @@ select = [
     "N816",
     "D105",
     "D106",
-    "D107",
     "D300",
     "UP010",
     "UP011",

@@ -1,4 +1,4 @@
-"""Models module."""
+"""Data module."""
 
 __copyright__ = """
 LICENSED INTERNAL CODE. PROPERTY OF IBM.

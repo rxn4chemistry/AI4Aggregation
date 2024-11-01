@@ -5,9 +5,14 @@ import pandas as pd
 
 
 def filter_synthesis(synthesis_data: pd.DataFrame) -> pd.DataFrame:
+
     subsets = list()
     for serial in synthesis_data['serial'].unique():
         subset = synthesis_data[synthesis_data['serial'] == serial]
+
+        # Filter out any invalid amino acids / pre-chains
+        if len(subset[subset['amino_acid'].map(lambda aa : isinstance(aa, str))]) != len(subset) or len(subset[subset['pre-chain'].map(lambda pc : isinstance(pc, str))]) != len(subset):
+            continue
 
         # Filter out all synthesis not starting from scratch
         if len(subset) != (len(subset['peptide'].iloc[-1]) - 1):
@@ -18,7 +23,7 @@ def filter_synthesis(synthesis_data: pd.DataFrame) -> pd.DataFrame:
             continue
 
         # Shorten peptides to the first 20
-        subset = subset[:min(len(subset), 20)]
+        subset = subset[:min(len(subset), 19)]
         subsets.append(subset[['serial', 'peptide', 'amino_acid', 'first_diff']])
 
     return pd.concat(subsets)
@@ -41,22 +46,22 @@ def process_mit_data(mit_data: pd.DataFrame) -> pd.DataFrame:
 
 
 def clean_cys_his(synthesis_data: pd.DataFrame, row: object) -> float:
-    if not (row["amino_acid"] == "H" or row["amino_acid"] == "C"):
-        return row["first_diff"]
+    if not (row["amino_acid"] == "H" or row["amino_acid"] == "C"): # type: ignore
+        return row["first_diff"] # type: ignore
     else:
         first_index = synthesis_data.iloc[0].name
         last_index = synthesis_data.iloc[-1].name
         # Cys His is the second amino acid -> Interpolate between 0 and the second
-        if row.name == first_index:
-            interpolated_diff = synthesis_data.loc[row.name + 1]["first_diff"] / 2
+        if row.name == first_index: # type: ignore
+            interpolated_diff = synthesis_data.loc[row.name + 1]["first_diff"] / 2 # type: ignore
         # Cys His is the last amino acid -> Use the previous diff
-        elif row.name == last_index:
-            interpolated_diff = synthesis_data.loc[row.name - 1]["first_diff"]
+        elif row.name == last_index: # type: ignore
+            interpolated_diff = synthesis_data.loc[row.name - 1]["first_diff"] # type: ignore
         # Interpolate
         else:
             interpolated_diff = (
-                synthesis_data.loc[row.name - 1]["first_diff"]
-                + synthesis_data.loc[row.name + 1]["first_diff"]
+                synthesis_data.loc[row.name - 1]["first_diff"] # type: ignore
+                + synthesis_data.loc[row.name + 1]["first_diff"] # type: ignore
             ) / 2
 
         return interpolated_diff

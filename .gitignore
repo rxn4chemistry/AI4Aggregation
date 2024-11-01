@@ -118,4 +118,6 @@ venv.bak/
 # Apple macOS
 .DS_Store
 bench/
-data/
+
+data/*
+experiments
