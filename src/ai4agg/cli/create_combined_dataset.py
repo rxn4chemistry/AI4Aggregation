@@ -5,9 +5,14 @@ import pandas as pd
 
 
 def filter_synthesis(synthesis_data: pd.DataFrame) -> pd.DataFrame:
+
     subsets = list()
     for serial in synthesis_data['serial'].unique():
         subset = synthesis_data[synthesis_data['serial'] == serial]
+
+        # Filter out any invalid amino acids / pre-chains
+        if len(subset[subset['amino_acid'].map(lambda aa : isinstance(aa, str))]) != len(subset) or len(subset[subset['pre-chain'].map(lambda pc : isinstance(pc, str))]) != len(subset):
+            continue
 
         # Filter out all synthesis not starting from scratch
         if len(subset) != (len(subset['peptide'].iloc[-1]) - 1):
@@ -18,7 +23,7 @@ def filter_synthesis(synthesis_data: pd.DataFrame) -> pd.DataFrame:
             continue
 
         # Shorten peptides to the first 20
-        subset = subset[:min(len(subset), 20)]
+        subset = subset[:min(len(subset), 19)]
         subsets.append(subset[['serial', 'peptide', 'amino_acid', 'first_diff']])
 
     return pd.concat(subsets)

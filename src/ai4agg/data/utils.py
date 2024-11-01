@@ -1,10 +1,19 @@
+import random
 from typing import Dict
 
-import pandas as pd
-from sklearn.model_selection import KFold, train_test_split
-import random
-import torch
 import numpy as np
+import pandas as pd
+import torch
+from sklearn.model_selection import KFold, train_test_split
+from rdkit import Chem
+from rdkit.Chem import AllChem
+import pkg_resources
+from typing import List
+
+AA_TO_SMILES_PATH = pkg_resources.resource_filename(
+    "aiforagg", "resources/onelet_to_smiles.csv"
+)
+
 
 def seed_everything(seed: int):
     
@@ -33,5 +42,37 @@ def split_peptide_set(dataset: pd.DataFrame, val: bool = False, cv_split: int = 
         dataset_dict['val'] = val_set
 
     return dataset_dict
+
+
+
+class FingerPrintCalculator:
+
+    def __init__(self) -> None:
+
+        df = pd.read_csv(AA_TO_SMILES_PATH)
+        df = df.replace(np.nan, "", regex=True)
+        df["AASMILES"] = df["left"] + df["sidechain"] + df["right"]
+        onelet_smiles_dict = dict(zip(df.abbrev, df.AASMILES))
+        
+        self.onelet_smiles_dict = onelet_smiles_dict
+
+    def smilifier(self, sequence: str) -> str:
+        sequence_list = [*sequence][::-1]
+        sequence_smiles_list = [
+            self.onelet_smiles_dict.get(item, item) for item in sequence_list
+        ]
+        sequence_smiles_list += ["N"]
+        sequence_smiles = "".join(sequence_smiles_list)
+        return sequence_smiles
+
+
+    def morgan_fingerprint(self, amino_acid: str) -> List[float]:
+        smile = self.smilifier(amino_acid)
+        mol = Chem.MolFromSmiles(smile)
+        fp = AllChem.GetMorganFingerprintAsBitVect(
+            mol, radius=3, nBits=128
+        ) 
+        return list(fp)
+
 
 
