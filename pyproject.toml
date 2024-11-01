@@ -14,7 +14,7 @@ priority = "primary"
 [tool.poetry.dependencies]
 python = ">=3.10, <3.14"
 tqdm = "^4.25.0"
-accelerate = "0.32.0"
+accelerate = "^1.0.1"
 click = "^8.1.7"
 datasets = "^2.19.2"
 torch = ">= 2.2.2, <2.5.0"
@@ -26,6 +26,7 @@ rdkit = "^2024.3.5"
 more-itertools = "^10.5.0"
 sktime = "^0.34.0"
 shap = "^0.46.0"
+matplotlib = "^3.9.2"
 
 [tool.poetry.dev-dependencies]
 jupyter = "^1.0.0"
@@ -44,6 +45,7 @@ create_combined_data = "ai4agg.cli.create_combined_dataset:main"
 train_hf_model = "ai4agg.cli.train_hf_models:main"
 train_sklearn_model = "ai4agg.cli.train_sklearn_models:main"
 explain_model = "ai4agg.cli.explainability:main"
+analyse_peptide = "ai4agg.cli.analyse_peptide:main"
 
 
 [tool.mypy]
@@ -61,6 +63,9 @@ module = [
     "rdkit.*",
     "torchmetrics.*",
     "sktime.*",
+    "matplotlib.*",
+    "tqdm.*",
+    "shap.*",
 ]
 ignore_missing_imports = true
 
