@@ -24,10 +24,10 @@ def load_data(data_path: Path, tokenizer: AutoTokenizer, cv_split: int = 0, seed
     dataset = make_whole_peptide_set(data_path)
     dataset_dict = split_peptide_set(dataset, val=True, cv_split=cv_split, seed=seed)
 
-    dataset_dict = DatasetDict({key : Dataset.from_pandas(df) for key, df in dataset_dict.items()})
-    dataset_dict = dataset_dict.map(lambda sample : tokenizer(sample['peptide']))
+    dataset_dict_hf = DatasetDict({key : Dataset.from_pandas(df) for key, df in dataset_dict.items()})
+    dataset_dict_hf = dataset_dict_hf.map(lambda sample : tokenizer(sample['peptide']))
 
-    return dataset_dict
+    return dataset_dict_hf
 
 def compute_metrics(eval_pred):
     predictions, labels = eval_pred
@@ -35,9 +35,9 @@ def compute_metrics(eval_pred):
 
     return {'f1': binary_f1_score(torch.Tensor(predictions), torch.Tensor(labels))}
 
-def train(data_path: Path, output_path: Path, cv_split: int, model: str, seed: int):
-    tokenizer = AutoTokenizer.from_pretrained(model)
-    model = AutoModelForSequenceClassification.from_pretrained(model, num_labels=2, problem_type='single_label_classification')
+def train(data_path: Path, output_path: Path, cv_split: int, model_name: str, seed: int):
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2, problem_type='single_label_classification')
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
     dataset = load_data(data_path, tokenizer, cv_split=cv_split, seed=seed)
@@ -87,8 +87,8 @@ def train(data_path: Path, output_path: Path, cv_split: int, model: str, seed: i
         
         model_test_output.extend(outputs["logits"].cpu())
 
-    model_test_output = torch.stack(model_test_output)
-    predictions = torch.argmax(model_test_output, dim=-1)
+    model_test_output_tensor = torch.stack(model_test_output)
+    predictions = torch.argmax(model_test_output_tensor, dim=-1)
 
     f1_score = binary_f1_score(predictions, torch.Tensor(predict_dataset['labels']))
 

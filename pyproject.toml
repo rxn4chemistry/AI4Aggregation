@@ -21,6 +21,7 @@ torch = "^2.2.2"
 transformers = "^4.41.2"
 scikit-learn = "^1.5.2"
 xgboost = "^2.1.1"
+torchmetrics = "^1.5.1"
 
 [tool.poetry.dev-dependencies]
 jupyter = "^1.0.0"
@@ -50,6 +51,10 @@ module = [
     "torch.*",
     "transformers.*",
     "yaml.*",
+    "pandas.*",
+    "sklearn.*",
+    "rdkit.*",
+    "torchmetrics.*",
 ]
 ignore_missing_imports = true
 

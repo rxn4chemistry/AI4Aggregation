@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
 
 import click
 import numpy as np
@@ -18,7 +18,12 @@ from ..utils.loaders import (
     make_whole_peptide_set,
     make_wof_peptide_set,
 )
-from ..utils.preprocessors import SequencePreprocessor
+from ..utils.preprocessors import (
+    FingerprintPreprocessor,
+    OccurencyVectorPreprocessor,
+    OneHotPreprocessor,
+    SequencePreprocessor,
+)
 from ..utils.utils import seed_everything, split_peptide_set
 
 logging.basicConfig(level=logging.INFO)
@@ -32,8 +37,9 @@ LOADER_REGISTRY = {'reaction_set': make_reaction_set,
                    'whole_set_shuffled': make_shuffled_peptide_set}
 
 PREPROCESSOR_REGISTRY = {'sequence': SequencePreprocessor,
-                         'one_hot': None,
-                         'fingerprint': None,
+                         'one_hot': OneHotPreprocessor,
+                         'fingerprint': FingerprintPreprocessor,
+                         'occurency': OccurencyVectorPreprocessor
                          }
 
 MODEL_REGISTRY = {'rff': RandomForestClassifier,
@@ -48,7 +54,7 @@ MODEL_REGISTRY = {'rff': RandomForestClassifier,
 
 def load_data(data_path: Path, loader: str, preprocessor: str, cv_split: int = 0, seed: int = 3245, **kwargs) -> pd.DataFrame:
 
-    dataset = LOADER_REGISTRY[loader](data_path, **kwargs)
+    dataset = LOADER_REGISTRY[loader](data_path, **kwargs) # type: ignore
 
     preprocessor = PREPROCESSOR_REGISTRY[preprocessor](dataset, random_state=seed, **kwargs)
     dataset['input'] = dataset['peptide'].map(preprocessor)
@@ -57,7 +63,7 @@ def load_data(data_path: Path, loader: str, preprocessor: str, cv_split: int = 0
 
     return dataset_dict
 
-def train(dataset_dict: Path, model: str, seed: int = 3245) -> float:
+def train(dataset_dict: Dict[str, pd.DataFrame], model: str, seed: int = 3245) -> float:
 
     classifier = MODEL_REGISTRY[model](random_state=seed)
     classifier.fit(dataset_dict['train']['input'].to_list(), dataset_dict['train']['aggregation'].to_list())
@@ -80,9 +86,9 @@ def train(dataset_dict: Path, model: str, seed: int = 3245) -> float:
 @click.command()
 @click.option("--data_path", type=Path, required=True)
 @click.option("--output_path", type=Path, required=True)
-@click.option("--loader", type=click.Choice(LOADER_REGISTRY.keys()))
-@click.option("--preprocessor", type=click.Choice(PREPROCESSOR_REGISTRY.keys()))
-@click.option("--model", type=click.Choice(MODEL_REGISTRY.keys()))
+@click.option("--loader", type=click.Choice(list(LOADER_REGISTRY.keys())))
+@click.option("--preprocessor", type=click.Choice(list(PREPROCESSOR_REGISTRY.keys())))
+@click.option("--model", type=click.Choice(list(MODEL_REGISTRY.keys())))
 @click.option("--seed", type=int, default=3245)
 @click.option("--wof_start", type=int, required=False)
 @click.option("--wof_end", type=int, required=False)

@@ -32,7 +32,7 @@ def make_whole_peptide_set(data_path: Path, **kwargs) -> pd.DataFrame: # noqa
 # Whole Peptide Set shuffled: Consider whole peptides but shuffle them
 def make_shuffled_peptide_set(data_path: Path, **kwargs) -> pd.DataFrame: # noqa
     peptide_set = make_whole_peptide_set(data_path)
-    peptide_set['peptide'] = peptide_set['peptide'].map(lambda peptide : ''.join(random.sample(list(peptide))))
+    peptide_set['peptide'] = peptide_set['peptide'].map(lambda peptide : ''.join(random.sample(list(peptide), len(peptide))))
     return peptide_set
 
 # Shift point of aggregation

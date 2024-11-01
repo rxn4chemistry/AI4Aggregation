@@ -1,14 +1,13 @@
 import random
-from typing import Dict
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
+import pkg_resources
 import torch
-from sklearn.model_selection import KFold, train_test_split
 from rdkit import Chem
 from rdkit.Chem import AllChem
-import pkg_resources
-from typing import List
+from sklearn.model_selection import KFold, train_test_split
 
 AA_TO_SMILES_PATH = pkg_resources.resource_filename(
     "aiforagg", "resources/onelet_to_smiles.csv"
@@ -47,7 +46,7 @@ def split_peptide_set(dataset: pd.DataFrame, val: bool = False, cv_split: int = 
 
 class FingerPrintCalculator:
 
-    def __init__(self) -> None:
+    def __init__(self, n_bits: int) -> None:
 
         df = pd.read_csv(AA_TO_SMILES_PATH)
         df = df.replace(np.nan, "", regex=True)
@@ -55,6 +54,7 @@ class FingerPrintCalculator:
         onelet_smiles_dict = dict(zip(df.abbrev, df.AASMILES))
         
         self.onelet_smiles_dict = onelet_smiles_dict
+        self.n_bits = n_bits
 
     def smilifier(self, sequence: str) -> str:
         sequence_list = [*sequence][::-1]
@@ -70,8 +70,8 @@ class FingerPrintCalculator:
         smile = self.smilifier(amino_acid)
         mol = Chem.MolFromSmiles(smile)
         fp = AllChem.GetMorganFingerprintAsBitVect(
-            mol, radius=3, nBits=128
-        ) 
+            mol, radius=3, nBits=self.n_bits
+        )
         return list(fp)
 
 
