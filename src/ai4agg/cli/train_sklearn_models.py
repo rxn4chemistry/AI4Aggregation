@@ -70,10 +70,10 @@ def load_data(data_path: Path, loader: str, preprocessor: str, cv_split: int = 0
 def train(dataset_dict: Dict[str, pd.DataFrame], model: str) -> float:
 
     classifier = MODEL_REGISTRY[model]()
-    classifier.fit(dataset_dict['train']['input'].to_list(), dataset_dict['train']['aggregation'].to_list())
+    classifier.fit(np.stack(dataset_dict['train']['input'].to_list()), np.stack(dataset_dict['train']['aggregation'].to_list()))
 
     test_set = dataset_dict['test']
-    test_set['prediction'] = classifier.predict(test_set['input'].to_list())
+    test_set['prediction'] = classifier.predict(np.stack(test_set['input'].to_list()))
 
     ground_truth = list()
     predictions = list()
@@ -116,14 +116,10 @@ def main(data_path: Path,
     for cv_split in range(5):
         logger.info(f"Running Split {cv_split}/5")
 
-        padding = True
-        if model in ['hc2', 'timeforest', 'weasel']:
-            padding = False
+        if model in ['hc2', 'timeforest', 'weasel'] and (loader != 'whole_set' or preprocessor != 'sequence'):
+            raise ValueError(f"Incompatible loader {loader} or preprocessor {preprocessor} for model {model}.")
 
-            if loader != 'whole_set' or preprocessor != 'sequence':
-                raise ValueError(f"Incompatible loader {loader} or preprocessor {preprocessor} for model {model}.")
-
-        dataset_dict = load_data(data_path, loader, preprocessor, cv_split=cv_split, padding=padding, wof_start=wof_start, wof_end=wof_end, wof_drop=wof_drop, occurency_vector_normalise=occurency_vector_normalise)
+        dataset_dict = load_data(data_path, loader, preprocessor, cv_split=cv_split, padding=True, wof_start=wof_start, wof_end=wof_end, wof_drop=wof_drop, occurency_vector_normalise=occurency_vector_normalise)
         f1_result = train(dataset_dict, model)
         logger.info(f"Finished Running Split {cv_split}/5 F1: {f1_result:.3f}")
 
