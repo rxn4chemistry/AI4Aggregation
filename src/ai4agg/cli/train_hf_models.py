@@ -35,7 +35,7 @@ def compute_metrics(eval_pred):
 
     return {'f1': binary_f1_score(torch.Tensor(predictions), torch.Tensor(labels))}
 
-def train(data_path: Path, output_path: Path, cv_split: int, model_name: str, seed: int):
+def train(data_path: Path, output_path: Path, cv_split: int, model_name: str, pretrained: bool, seed: int):
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2, problem_type='single_label_classification')
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
@@ -99,14 +99,15 @@ def train(data_path: Path, output_path: Path, cv_split: int, model_name: str, se
 @click.option("--data_path", type=Path, required=True)
 @click.option("--output_path", type=Path, required=True)
 @click.option("--model", type=str, default='facebook/esm2_t12_35M_UR50D')
+@click.option("--pretrained", type=bool, default=True)
 @click.option("--seed", type=int, default=3245)
-def main(data_path: Path, output_path: Path, model: str, seed: int):
+def main(data_path: Path, output_path: Path, model: str, pretrained: bool, seed: int):
 
     seed_everything(seed)
     
     f1 = list()
     for cv_split in range(5):
-        f1.append(train(data_path, output_path, cv_split, model, seed))
+        f1.append(train(data_path, output_path, cv_split, model, pretrained, seed))
 
     with (output_path / 'results.json').open('w') as results_file:
         json.dump({'f1': {'mean': np.mean(f1).astype(float), 'std': np.std(f1).astype(float)}}, results_file)

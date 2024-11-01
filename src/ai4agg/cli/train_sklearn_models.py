@@ -63,9 +63,9 @@ def load_data(data_path: Path, loader: str, preprocessor: str, cv_split: int = 0
 
     return dataset_dict
 
-def train(dataset_dict: Dict[str, pd.DataFrame], model: str, seed: int = 3245) -> float:
+def train(dataset_dict: Dict[str, pd.DataFrame], model: str) -> float:
 
-    classifier = MODEL_REGISTRY[model](random_state=seed)
+    classifier = MODEL_REGISTRY[model]()
     classifier.fit(dataset_dict['train']['input'].to_list(), dataset_dict['train']['aggregation'].to_list())
 
     test_set = dataset_dict['test']
@@ -111,7 +111,7 @@ def main(data_path: Path,
         logger.info(f"Running Split {cv_split}/5")
 
         dataset_dict = load_data(data_path, loader, preprocessor, cv_split=cv_split, wof_start=wof_start, wof_end=wof_end, wof_drop=wof_drop)
-        f1_result = train(dataset_dict, model, seed)
+        f1_result = train(dataset_dict, model)
         logger.info(f"Finished Running Split {cv_split}/5 F1: {f1_result:.3f}")
 
         f1.append(f1_result)
