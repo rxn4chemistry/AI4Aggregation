@@ -1,4 +1,5 @@
 import logging
+import re
 from pathlib import Path
 from typing import List, Tuple
 
@@ -11,7 +12,6 @@ import tqdm
 from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
-import re
 
 from ..utils.loaders import make_agg_point_peptide_set
 from ..utils.preprocessors import OccurencyVectorPreprocessor

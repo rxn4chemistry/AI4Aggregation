@@ -11,7 +11,7 @@ from xgboost import XGBClassifier
 
 from ..utils.preprocessors import OccurencyVectorPreprocessor
 from ..utils.utils import seed_everything
-from .explainability import load_data, train, get_motif_occurency_vector_1_2
+from .explainability import get_motif_occurency_vector_1_2, load_data
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
