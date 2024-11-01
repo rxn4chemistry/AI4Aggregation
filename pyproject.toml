@@ -22,6 +22,8 @@ transformers = "^4.41.2"
 scikit-learn = "^1.5.2"
 xgboost = "^2.1.1"
 torchmetrics = "^1.5.1"
+rdkit = "^2024.3.5"
+more-itertools = "^10.5.0"
 
 [tool.poetry.dev-dependencies]
 jupyter = "^1.0.0"

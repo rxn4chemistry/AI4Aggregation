@@ -85,10 +85,22 @@ class FingerprintPreprocessor(CorePreprocessor):
         super().__init__(data, padding, random_state)
 
         self.fingerprint_calculator = FingerPrintCalculator(n_fingerprint_bits)
-        self.maximum_sequence_length = n_fingerprint_bits * self.max_sequence_len
 
     def __call__(self, peptide: str) -> np.ndarray:
-        return np.zeros(len(peptide))
+         # One hot encoding
+        fingerprint_sequence = list()
+        for aa in peptide:
+            fingerprint_aa = self.fingerprint_calculator.morgan_fingerprint(aa)
+            fingerprint_sequence.append(fingerprint_aa)
+
+        # Padding
+        if self.padding:
+            n_pad = self.max_sequence_len - len(peptide)
+            pad_vector = np.zeros(n_pad * self.max_sequence_len)
+            fingerprint_sequence.append(pad_vector)
+
+        fingerprint_sequence_np = np.concatenate(fingerprint_sequence, axis=0).flatten()
+        return fingerprint_sequence_np
 
 
 @dataclass

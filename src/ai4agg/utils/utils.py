@@ -6,11 +6,11 @@ import pandas as pd
 import pkg_resources
 import torch
 from rdkit import Chem
-from rdkit.Chem import AllChem
+from rdkit.Chem import rdFingerprintGenerator
 from sklearn.model_selection import KFold, train_test_split
 
 AA_TO_SMILES_PATH = pkg_resources.resource_filename(
-    "aiforagg", "resources/onelet_to_smiles.csv"
+    "ai4agg", "resources/onelet_to_smiles.csv"
 )
 
 
@@ -55,6 +55,8 @@ class FingerPrintCalculator:
         
         self.onelet_smiles_dict = onelet_smiles_dict
         self.n_bits = n_bits
+        self.fingerprint = rdFingerprintGenerator.GetMorganGenerator(radius=3,fpSize=n_bits)
+
 
     def smilifier(self, sequence: str) -> str:
         sequence_list = [*sequence][::-1]
@@ -65,13 +67,10 @@ class FingerPrintCalculator:
         sequence_smiles = "".join(sequence_smiles_list)
         return sequence_smiles
 
-
     def morgan_fingerprint(self, amino_acid: str) -> List[float]:
         smile = self.smilifier(amino_acid)
         mol = Chem.MolFromSmiles(smile)
-        fp = AllChem.GetMorganFingerprintAsBitVect(
-            mol, radius=3, nBits=self.n_bits
-        )
+        fp = self.fingerprint.GetFingerprintAsNumPy(mol)
         return list(fp)
 
 
