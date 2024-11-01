@@ -15,8 +15,8 @@ from transformers import (
     TrainingArguments,
 )
 
-from ..data.loaders import make_whole_peptide_set
-from ..data.utils import seed_everything, split_peptide_set
+from ..utils.loaders import make_whole_peptide_set
+from ..utils.utils import seed_everything, split_peptide_set
 
 
 def load_data(data_path: Path, tokenizer: AutoTokenizer, cv_split: int = 0, seed: int = 3245) -> DatasetDict:

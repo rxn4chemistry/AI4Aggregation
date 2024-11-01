@@ -12,14 +12,14 @@ from sklearn.metrics import f1_score
 from sklearn.neighbors import KNeighborsClassifier
 from xgboost import XGBClassifier
 
-from ..data.loaders import (
+from ..utils.loaders import (
     make_reaction_set,
     make_shuffled_peptide_set,
     make_whole_peptide_set,
     make_wof_peptide_set,
 )
-from ..data.preprocessors import SequencePreprocessor
-from ..data.utils import seed_everything, split_peptide_set
+from ..utils.preprocessors import SequencePreprocessor
+from ..utils.utils import seed_everything, split_peptide_set
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
