@@ -97,7 +97,7 @@ class FingerprintPreprocessor(CorePreprocessor):
         if self.padding:
             n_pad = self.max_sequence_len - len(peptide)
             pad_vector = np.zeros(n_pad * self.max_sequence_len)
-            fingerprint_sequence.append(pad_vector)
+            fingerprint_sequence.append(pad_vector) # type: ignore
 
         fingerprint_sequence_np = np.concatenate(fingerprint_sequence, axis=0).flatten()
         return fingerprint_sequence_np

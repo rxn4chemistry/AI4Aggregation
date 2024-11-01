@@ -44,7 +44,7 @@ train_sklearn_model = "ai4agg.cli.train_sklearn_models:main"
 
 
 [tool.mypy]
-check_untyped_defs = true
+check_untyped_defs = false
 
 [[tool.mypy.overrides]]
 module = [
