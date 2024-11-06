@@ -1,7 +1,7 @@
 #!/bin/bash
 
 top_folder=/dccstor/malberts_storage/UZH/ai4agg/experiments/sklearn
-: '
+
 for loader in reaction_set whole_set whole_set_shuffled; do
     for preprocessor in sequence one_hot fingerprint occurency; do
         for model in rff xgb knn gaussian; do
@@ -17,7 +17,7 @@ for loader in reaction_set whole_set whole_set_shuffled; do
         done
     done
 done
-'
+
 
 for model in hc2 timeforest weasel; do
     mkdir -p ${top_folder}/whole_set/sequence/${model}

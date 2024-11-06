@@ -19,7 +19,7 @@ def filter_synthesis(synthesis_data: pd.DataFrame) -> pd.DataFrame:
             continue
 
         # Filter out all short peptides
-        if len(subset['peptide'].iloc[-1]) <= 5:
+        if len(subset['peptide'].iloc[-1]) < 5:
             continue
 
         # Shorten peptides to the first 20

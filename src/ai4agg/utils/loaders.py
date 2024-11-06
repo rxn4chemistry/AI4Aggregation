@@ -39,15 +39,15 @@ def make_shuffled_peptide_set(data_path: Path, **kwargs) -> pd.DataFrame: # noqa
 def get_aggregation_label_wof(
     subset: pd.DataFrame, start: int, end: int, drop: bool = False
 ):
-    agg_points = np.argwhere(subset["label"]).flatten()
+    agg_points = np.argwhere(subset["aggregation"]).flatten()
     label = np.zeros(len(subset))
     if len(agg_points) == 0:
-        subset["label"] = label.astype(bool)
+        subset["aggregation"] = label.astype(bool)
         return subset
 
     agg_point = agg_points[0]
     label[max(0, agg_point - start) : min(agg_point + end, len(subset))] = 1
-    subset["label"] = label.astype(bool)
+    subset["aggregation"] = label.astype(bool)
 
     if drop:
         subset = subset.iloc[: min(agg_point + end, len(subset))]

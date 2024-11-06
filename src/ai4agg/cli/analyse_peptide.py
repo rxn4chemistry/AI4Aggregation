@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from typing import List, Tuple
 
 import click
 import numpy as np
@@ -9,18 +10,42 @@ import tqdm
 from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
 
+from ..utils.loaders import make_whole_peptide_set
 from ..utils.preprocessors import OccurencyVectorPreprocessor
 from ..utils.utils import seed_everything
-from .explainability import get_motif_occurency_vector_1_2, load_data
+from .explainability import get_motif_occurency_vector_1_2, get_motifs
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
+def load_data(data_path: Path, seed: int) -> Tuple[List[str], pd.DataFrame]:
 
-def train(data: pd.DataFrame, n_repeats: int = 2):
+    data = make_whole_peptide_set(data_path)
+
+    preprocessor = OccurencyVectorPreprocessor(data, random_state=seed, normalise=True)
+    data['input'] = data['peptide'].map(preprocessor)
+    data['label'] = data['aggregation'].map(lambda agg : [0, 1] if agg else [1, 0])
+
+    feature_names = list(preprocessor.all_aa)
+    
+    all_motifs = list()
+    for peptide in data['peptide']:
+        all_motifs.extend(get_motifs(peptide, '1_2'))
+
+    motif_histogram = pd.value_counts(all_motifs)
+    selected_motifs = motif_histogram[motif_histogram.values >= 20].index.to_list()
+
+    data['input'] = data.apply(lambda row : np.concatenate([row['input'], get_motif_occurency_vector_1_2(row['peptide'], selected_motifs)]), axis=1)
+    feature_names = feature_names + selected_motifs
+
+    return feature_names, data
+
+
+def train(data: pd.DataFrame, n_repeats: int = 100) -> List[XGBClassifier]:
 
     models = list()
+
     for _ in tqdm.tqdm(range(n_repeats)):
         train_set, _ = train_test_split(data, shuffle=True)
 
@@ -30,21 +55,7 @@ def train(data: pd.DataFrame, n_repeats: int = 2):
 
     return models
 
-
-@click.command()
-@click.option("--train_data", type=Path, required=True)
-@click.option("--peptide", type=str, required=True)
-@click.option("--n_repeats", type=int, default=50)
-@click.option("--seed", type=int, default=3245)
-def main(train_data: Path, peptide: str, n_repeats: int, seed: int) -> None:
-
-    seed_everything(seed)
-
-    logger.info("Loading Data")
-    feature_names, data = load_data(train_data, '1_2', True, seed)
-    
-    logger.info("Training Models")
-    models = train(data, n_repeats)
+def analyse_peptide(peptide: str, data: pd.DataFrame, models: List[XGBClassifier], feature_names: List[str], seed: int) -> None:
 
     # Flip peptide and restrict to 20 aa
     peptide = ''.join(list(reversed(peptide)))[:20]
@@ -74,7 +85,9 @@ def main(train_data: Path, peptide: str, n_repeats: int, seed: int) -> None:
     if 'S' not in relevant_section_peptide and 'T' not in relevant_section_peptide:
         print("No S or T found to replace.")
     else:
-        motifs_in_peptide = get_motif_occurency_vector_1_2(relevant_section_peptide, feature_names[20:])
+
+        motifs_in_peptide_vector = get_motif_occurency_vector_1_2(relevant_section_peptide, feature_names[20:]).astype(bool)
+        motifs_in_peptide = np.array(feature_names)[20:][motifs_in_peptide_vector]
         relevant_motifs = list(filter(lambda motif: 'S' in motif or 'T' in motif, set(feature_names[20:]).intersection(motifs_in_peptide)))
 
         if 'S' in relevant_section_peptide and 'T' in relevant_section_peptide:
@@ -110,4 +123,26 @@ def main(train_data: Path, peptide: str, n_repeats: int, seed: int) -> None:
             impact_df = impact_df.sort_values(by='impact', ascending=False)
             for i in range(len(impact_df)):
                 print(f"Motif: {impact_df.iloc[i]['motif']} Impact: {impact_df.iloc[i]['impact']:.3f}")
+        
+    print()
 
+
+@click.command()
+@click.option("--train_data", type=Path, required=True)
+@click.option("--peptides", type=list, required=True, multiple=True)
+@click.option("--n_repeats", type=int, default=100)
+@click.option("--seed", type=int, default=3245)
+def main(train_data: Path, peptides: List[str], n_repeats: int, seed: int) -> None:
+
+    seed_everything(seed)
+
+    logger.info("Loading Data")
+    feature_names, data = load_data(train_data, seed)
+    
+    logger.info("Training Models")
+    models = train(data, n_repeats)
+
+    for peptide in peptides:
+        analyse_peptide(peptide, data, models, feature_names, seed)
+
+    
