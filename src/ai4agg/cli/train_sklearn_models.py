@@ -7,9 +7,11 @@ from typing import Dict, Optional
 import click
 import numpy as np
 import pandas as pd
+import tqdm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.metrics import f1_score
+from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sktime.classification.dictionary_based import WEASEL
 from sktime.classification.hybrid import HIVECOTEV2
@@ -58,12 +60,16 @@ MODEL_REGISTRY = {'rff': RandomForestClassifier,
 
 def load_data(data_path: Path, loader: str, preprocessor: str, cv_split: int = 0, seed: int = 3245, **kwargs) -> pd.DataFrame:
 
-    dataset = LOADER_REGISTRY[loader](data_path, **kwargs) # type: ignore
+    dataset = LOADER_REGISTRY[loader](data_path, seed=seed, **kwargs) # type: ignore
 
     preprocessor = PREPROCESSOR_REGISTRY[preprocessor](dataset, random_state=seed, **kwargs)
     dataset['input'] = dataset['peptide'].map(preprocessor)
 
-    dataset_dict = split_peptide_set(dataset, val=False, cv_split=cv_split, seed=seed)
+    if loader == 'whole_set_shuffled':
+        train_set, test_set = train_test_split(dataset, random_state=seed)
+        dataset_dict = {'train': train_set, 'test': test_set}
+    else:
+        dataset_dict = split_peptide_set(dataset, val=False, cv_split=cv_split, seed=seed)
 
     return dataset_dict
 
@@ -94,6 +100,7 @@ def train(dataset_dict: Dict[str, pd.DataFrame], model: str) -> float:
 @click.option("--preprocessor", type=click.Choice(list(PREPROCESSOR_REGISTRY.keys())))
 @click.option("--model", type=click.Choice(list(MODEL_REGISTRY.keys())))
 @click.option("--seed", type=int, default=3245)
+@click.option("--n_repeats", type=int, default=0)
 @click.option("--wof_start", type=int, required=False)
 @click.option("--wof_end", type=int, required=False)
 @click.option("--wof_drop", type=bool, required=False)
@@ -104,6 +111,7 @@ def main(data_path: Path,
          preprocessor: str,
          model: str,
          seed: int,
+         n_repeats: int,
          wof_start: Optional[int],
          wof_end: Optional[int],
          wof_drop: Optional[bool],
@@ -113,17 +121,47 @@ def main(data_path: Path,
     seed_everything(seed)
     
     f1 = list()
-    for cv_split in range(5):
-        logger.info(f"Running Split {cv_split}/5")
 
-        if model in ['hc2', 'timeforest', 'weasel'] and (loader != 'whole_set' or preprocessor != 'sequence'):
-            raise ValueError(f"Incompatible loader {loader} or preprocessor {preprocessor} for model {model}.")
+    if loader == 'whole_set_shuffled':
+        for i in tqdm.tqdm(range(n_repeats)):
+            dataset_dict = load_data(data_path,
+                                     loader,
+                                     preprocessor,
+                                     cv_split=0,
+                                     padding=True,
+                                     wof_start=wof_start,
+                                     wof_end=wof_end,
+                                     wof_drop=wof_drop,
+                                     occurency_vector_normalise=occurency_vector_normalise,
+                                     seed=i)
+            
+            f1_result = train(dataset_dict, model)
+            f1.append(f1_result)
+    
+    else:
+        for cv_split in range(5):
+            logger.info(f"Running Split {cv_split}/5")
 
-        dataset_dict = load_data(data_path, loader, preprocessor, cv_split=cv_split, padding=True, wof_start=wof_start, wof_end=wof_end, wof_drop=wof_drop, occurency_vector_normalise=occurency_vector_normalise)
-        f1_result = train(dataset_dict, model)
-        logger.info(f"Finished Running Split {cv_split}/5 F1: {f1_result:.3f}")
+            if model in ['hc2', 'timeforest', 'weasel'] and (loader != 'whole_set' or preprocessor != 'sequence'):
+                raise ValueError(f"Incompatible loader {loader} or preprocessor {preprocessor} for model {model}.")
 
-        f1.append(f1_result)
+            dataset_dict = load_data(data_path,
+                                     loader,
+                                     preprocessor,
+                                     cv_split=cv_split,
+                                     padding=True,
+                                     wof_start=wof_start,
+                                     wof_end=wof_end,
+                                     wof_drop=wof_drop,
+                                     occurency_vector_normalise=occurency_vector_normalise,
+                                     seed=seed)
+            
+            f1_result = train(dataset_dict, model)
+            logger.info(f"Finished Running Split {cv_split}/5 F1: {f1_result:.3f}")
+
+            f1.append(f1_result)
+
+    logger.info(f"F1: {np.mean(f1):.3f}±{np.std(f1):.3f}")
         
     with (output_path / 'results.json').open('w') as results_file:
         json.dump({'f1': {'mean': np.mean(f1).astype(float), 'std': np.std(f1).astype(float)}}, results_file)
