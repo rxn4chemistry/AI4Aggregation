@@ -117,7 +117,7 @@ def main(data_path: Path, output_path: Path, motifs: str, normalise: bool, n_rep
     seed_everything(seed)
 
     logger.info("Loading Data")
-    feature_names, data = load_data(data_path, motifs, normalise, seed)
+    _, data = load_data(data_path, motifs, normalise, seed)
 
     logger.info("Training Models")
     f1_test, x_test, shap_values = train(data, n_repeats)
@@ -125,6 +125,35 @@ def main(data_path: Path, output_path: Path, motifs: str, normalise: bool, n_rep
 
     logger.info("Explaining Predictions")
     plt.figure(dpi=300)
-    shap.summary_plot(shap_values[:,:,1], x_test, feature_names=feature_names, plot_size=(13, 7.5), show=False)
+    all_aa_names = np.array(['Ala (A)', 
+                             'Cys (C)', 
+                             'Asp (D)', 
+                             'Glu (E)', 
+                             'Phe (F)', 
+                             'Gly (G)', 
+                             'His (H)', 
+                             'Ile (I)', 
+                             'Lys (K)', 
+                             'Leu (L)', 
+                             'Met (M)', 
+                             'Asn (N)', 
+                             'Pro (P)', 
+                             'Gln (Q)',
+                             'Arg (R)',
+                             'Ser (S)',
+                             'Thr (T)',
+                             'Val (V)',
+                             'Trp (W)',
+                             'Tyr (Y)'])
+
+    sorting_mask = [15, 17, 7, 16, 8, 11, 0, 10, 13, 9, 5, 3, 18, 12, 6, 1, 14, 2, 19, 4]
+    shap.summary_plot(shap_values[:,:,1][:, sorting_mask], 
+                      x_test[:, sorting_mask], 
+                      feature_names=all_aa_names[sorting_mask], 
+                      plot_size=(13, 7.5), 
+                      show=False, 
+                      sort=False,
+                      color_bar_label="Amino Acid Occurence (length normalised)")
+    plt.xlabel("Impact on Aggregation (the higher the more aggregating)")
     plt.savefig(output_path / 'explainer_results.png', dpi=300, bbox_inches='tight')
 
