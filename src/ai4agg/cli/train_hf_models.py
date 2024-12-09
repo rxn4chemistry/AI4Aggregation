@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from datasets import Dataset, DatasetDict
 from more_itertools import chunked
-from torchmetrics.functional.classification import binary_f1_score
+from torchmetrics.functional.classification import binary_f1_score, binary_accuracy
 from transformers import (
     AutoConfig,
     AutoModelForSequenceClassification,
@@ -98,8 +98,9 @@ def train(data_path: Path, output_path: Path, cv_split: int, model_name: str, pr
     predictions = torch.argmax(model_test_output_tensor, dim=-1)
 
     f1_score = binary_f1_score(predictions, torch.Tensor(predict_dataset['labels']))
+    accuracy_score = binary_accuracy(predictions, torch.Tensor(predict_dataset['labels']))
 
-    return f1_score
+    return f1_score.item(), accuracy_score.item()
 
 
 @click.command()
@@ -112,10 +113,13 @@ def main(data_path: Path, output_path: Path, model: str, pretrained: bool, seed:
 
     seed_everything(seed)
     
-    f1 = list()
+    f1, accuracy = list(), list()
     for cv_split in range(5):
-        f1.append(train(data_path, output_path, cv_split, model, pretrained, seed))
+        f1_result, accuracy_result = train(data_path, output_path, cv_split, model, pretrained, seed)
+        f1.append(f1_result)
+        accuracy.append(accuracy_result)
+
 
     with (output_path / 'results.json').open('w') as results_file:
-        json.dump({'f1': {'mean': np.mean(f1).astype(float), 'std': np.std(f1).astype(float)}}, results_file)
+        json.dump({'f1': {'mean': np.mean(f1).astype(float), 'std': np.std(f1).astype(float)}, 'raw_f1': list(f1), 'raw_acc': list(accuracy)}, results_file)
     

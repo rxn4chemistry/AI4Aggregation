@@ -12,6 +12,7 @@ import tqdm
 from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
+from matplotlib.colors import LinearSegmentedColormap
 
 from ..utils.loaders import make_agg_point_peptide_set
 from ..utils.preprocessors import OccurencyVectorPreprocessor
@@ -147,13 +148,20 @@ def main(data_path: Path, output_path: Path, motifs: str, normalise: bool, n_rep
                              'Tyr (Y)'])
 
     sorting_mask = [15, 17, 7, 16, 8, 11, 0, 10, 13, 9, 5, 3, 18, 12, 6, 1, 14, 2, 19, 4]
+
+    custom_colours = LinearSegmentedColormap.from_list('custom_cmap', (
+                                                        (0.000, (0.537, 0.627, 0.612)),
+                                                        (0.500, (0.741, 0.482, 0.424)),
+                                                        (1.000, (0.890, 0.706, 0.275))))
+
     shap.summary_plot(shap_values[:,:,1][:, sorting_mask], 
                       x_test[:, sorting_mask], 
                       feature_names=all_aa_names[sorting_mask], 
                       plot_size=(13, 7.5), 
                       show=False, 
                       sort=False,
-                      color_bar_label="Amino Acid Occurence (length normalised)")
+                      color_bar_label="Amino Acid Occurence (length normalised)",
+                      cmap=custom_colours)
     plt.xlabel("Impact on Aggregation (the higher the more aggregating)")
-    plt.savefig(output_path / 'explainer_results.png', dpi=300, bbox_inches='tight')
+    plt.savefig(output_path / 'explainer_results.svg', dpi=300, bbox_inches='tight')
 

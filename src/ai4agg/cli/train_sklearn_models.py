@@ -10,7 +10,7 @@ import pandas as pd
 import tqdm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sktime.classification.dictionary_based import WEASEL
@@ -90,7 +90,8 @@ def train(dataset_dict: Dict[str, pd.DataFrame], model: str) -> float:
         predictions.append(np.any(subset['prediction']))
     
     f1 = f1_score(ground_truth, predictions)
-    return f1
+    accuracy = accuracy_score(ground_truth, predictions)
+    return f1, accuracy
     
 
 @click.command()
@@ -120,7 +121,7 @@ def main(data_path: Path,
 
     seed_everything(seed)
     
-    f1 = list()
+    f1, accuracy = list(), list()
 
     if loader == 'whole_set_shuffled':
         for i in tqdm.tqdm(range(n_repeats)):
@@ -135,8 +136,9 @@ def main(data_path: Path,
                                      occurency_vector_normalise=occurency_vector_normalise,
                                      seed=i)
             
-            f1_result = train(dataset_dict, model)
+            f1_result, accuracy_results = train(dataset_dict, model)
             f1.append(f1_result)
+            accuracy.append(accuracy_results)
     
     else:
         for cv_split in range(5):
@@ -156,13 +158,14 @@ def main(data_path: Path,
                                      occurency_vector_normalise=occurency_vector_normalise,
                                      seed=seed)
             
-            f1_result = train(dataset_dict, model)
+            f1_result, accuracy_results = train(dataset_dict, model)
             logger.info(f"Finished Running Split {cv_split}/5 F1: {f1_result:.3f}")
 
             f1.append(f1_result)
+            accuracy.append(accuracy_results)
 
     logger.info(f"F1: {np.mean(f1):.3f}±{np.std(f1):.3f}")
         
     with (output_path / 'results.json').open('w') as results_file:
-        json.dump({'f1': {'mean': np.mean(f1).astype(float), 'std': np.std(f1).astype(float)}}, results_file)
+        json.dump({'f1': {'mean': np.mean(f1).astype(float), 'std': np.std(f1).astype(float)}, 'raw_f1': list(f1), 'raw_acc': list(accuracy)}, results_file)
     
