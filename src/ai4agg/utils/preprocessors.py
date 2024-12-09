@@ -84,6 +84,7 @@ class FingerprintPreprocessor(CorePreprocessor):
     def __init__(self, data: pd.DataFrame, padding: bool = True, n_fingerprint_bits: int = 128, random_state: int = 3245, **kwargs): # noqa
         super().__init__(data, padding, random_state)
 
+        self.n_fingerprint_bits = n_fingerprint_bits
         self.fingerprint_calculator = FingerPrintCalculator(n_fingerprint_bits)
 
     def __call__(self, peptide: str) -> np.ndarray:
@@ -96,7 +97,7 @@ class FingerprintPreprocessor(CorePreprocessor):
         # Padding
         if self.padding:
             n_pad = self.max_sequence_len - len(peptide)
-            pad_vector = np.zeros(n_pad * self.max_sequence_len)
+            pad_vector = np.zeros(n_pad * self.n_fingerprint_bits)
             fingerprint_sequence.append(pad_vector) # type: ignore
 
         fingerprint_sequence_np = np.concatenate(fingerprint_sequence, axis=0).flatten()
@@ -109,7 +110,11 @@ class OccurencyVectorPreprocessor(CorePreprocessor):
     def __init__(self, data: pd.DataFrame, random_state: int = 3245, normalise: bool = True, **kwargs): # noqa
         super().__init__(data, False, random_state) # Occurency Vector needs no padding
 
-        self.all_aa = pd.unique(data['peptide'].map(lambda peptide : list(peptide)).to_list())
+        all_aa = list()
+        for peptide in data['peptide']:
+            all_aa.extend(list(peptide))
+        self.all_aa = np.unique(all_aa)
+
         self.normalise = normalise
 
     def __call__(self, peptide: str) -> np.ndarray:

@@ -6,8 +6,9 @@ import numpy as np
 import torch
 from datasets import Dataset, DatasetDict
 from more_itertools import chunked
-from torchmetrics.functional.classification import binary_f1_score
+from torchmetrics.functional.classification import binary_accuracy, binary_f1_score
 from transformers import (
+    AutoConfig,
     AutoModelForSequenceClassification,
     AutoTokenizer,
     DataCollatorWithPadding,
@@ -22,6 +23,7 @@ from ..utils.utils import seed_everything, split_peptide_set
 def load_data(data_path: Path, tokenizer: AutoTokenizer, cv_split: int = 0, seed: int = 3245) -> DatasetDict:
 
     dataset = make_whole_peptide_set(data_path)
+    dataset['labels'] = dataset['aggregation'].astype(int)
     dataset_dict = split_peptide_set(dataset, val=True, cv_split=cv_split, seed=seed)
 
     dataset_dict_hf = DatasetDict({key : Dataset.from_pandas(df) for key, df in dataset_dict.items()})
@@ -35,11 +37,17 @@ def compute_metrics(eval_pred):
 
     return {'f1': binary_f1_score(torch.Tensor(predictions), torch.Tensor(labels))}
 
-def train(data_path: Path, output_path: Path, cv_split: int, model_name: str, seed: int):
+def train(data_path: Path, output_path: Path, cv_split: int, model_name: str, pretrained: bool, seed: int):
+
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2, problem_type='single_label_classification')
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
+    if pretrained:
+        model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2, problem_type='single_label_classification')
+    else:
+        model_config = AutoConfig.from_pretrained(model_name)
+        model = AutoModelForSequenceClassification.from_config(model_config)
+    
     dataset = load_data(data_path, tokenizer, cv_split=cv_split, seed=seed)
 
     training_args = TrainingArguments(
@@ -54,7 +62,6 @@ def train(data_path: Path, output_path: Path, cv_split: int, model_name: str, se
         save_total_limit=2,
         load_best_model_at_end=True,
     )
-
 
     trainer = Trainer(
         model=model,
@@ -91,23 +98,28 @@ def train(data_path: Path, output_path: Path, cv_split: int, model_name: str, se
     predictions = torch.argmax(model_test_output_tensor, dim=-1)
 
     f1_score = binary_f1_score(predictions, torch.Tensor(predict_dataset['labels']))
+    accuracy_score = binary_accuracy(predictions, torch.Tensor(predict_dataset['labels']))
 
-    return f1_score
+    return f1_score.item(), accuracy_score.item()
 
 
 @click.command()
 @click.option("--data_path", type=Path, required=True)
 @click.option("--output_path", type=Path, required=True)
 @click.option("--model", type=str, default='facebook/esm2_t12_35M_UR50D')
+@click.option("--pretrained", type=bool, default=True)
 @click.option("--seed", type=int, default=3245)
-def main(data_path: Path, output_path: Path, model: str, seed: int):
+def main(data_path: Path, output_path: Path, model: str, pretrained: bool, seed: int):
 
     seed_everything(seed)
     
-    f1 = list()
+    f1, accuracy = list(), list()
     for cv_split in range(5):
-        f1.append(train(data_path, output_path, cv_split, model, seed))
+        f1_result, accuracy_result = train(data_path, output_path, cv_split, model, pretrained, seed)
+        f1.append(f1_result)
+        accuracy.append(accuracy_result)
+
 
     with (output_path / 'results.json').open('w') as results_file:
-        json.dump({'f1': {'mean': np.mean(f1).astype(float), 'std': np.std(f1).astype(float)}}, results_file)
+        json.dump({'f1': {'mean': np.mean(f1).astype(float), 'std': np.std(f1).astype(float)}, 'raw_f1': list(f1), 'raw_acc': list(accuracy)}, results_file)
     
