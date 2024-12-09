@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from datasets import Dataset, DatasetDict
 from more_itertools import chunked
-from torchmetrics.functional.classification import binary_f1_score, binary_accuracy
+from torchmetrics.functional.classification import binary_accuracy, binary_f1_score
 from transformers import (
     AutoConfig,
     AutoModelForSequenceClassification,

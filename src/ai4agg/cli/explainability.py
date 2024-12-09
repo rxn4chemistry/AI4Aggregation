@@ -9,10 +9,10 @@ import numpy as np
 import pandas as pd
 import shap
 import tqdm
+from matplotlib.colors import LinearSegmentedColormap
 from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
-from matplotlib.colors import LinearSegmentedColormap
 
 from ..utils.loaders import make_agg_point_peptide_set
 from ..utils.preprocessors import OccurencyVectorPreprocessor
@@ -126,19 +126,19 @@ def main(data_path: Path, output_path: Path, motifs: str, normalise: bool, n_rep
 
     logger.info("Explaining Predictions")
     plt.figure(dpi=300)
-    all_aa_names = np.array(['Ala (A)', 
-                             'Cys (C)', 
-                             'Asp (D)', 
-                             'Glu (E)', 
-                             'Phe (F)', 
-                             'Gly (G)', 
-                             'His (H)', 
-                             'Ile (I)', 
-                             'Lys (K)', 
-                             'Leu (L)', 
-                             'Met (M)', 
-                             'Asn (N)', 
-                             'Pro (P)', 
+    all_aa_names = np.array(['Ala (A)',
+                             'Cys (C)',
+                             'Asp (D)',
+                             'Glu (E)',
+                             'Phe (F)',
+                             'Gly (G)',
+                             'His (H)',
+                             'Ile (I)',
+                             'Lys (K)',
+                             'Leu (L)',
+                             'Met (M)',
+                             'Asn (N)',
+                             'Pro (P)',
                              'Gln (Q)',
                              'Arg (R)',
                              'Ser (S)',
@@ -154,11 +154,11 @@ def main(data_path: Path, output_path: Path, motifs: str, normalise: bool, n_rep
                                                         (0.500, (0.741, 0.482, 0.424)),
                                                         (1.000, (0.890, 0.706, 0.275))))
 
-    shap.summary_plot(shap_values[:,:,1][:, sorting_mask], 
-                      x_test[:, sorting_mask], 
-                      feature_names=all_aa_names[sorting_mask], 
-                      plot_size=(13, 7.5), 
-                      show=False, 
+    shap.summary_plot(shap_values[:,:,1][:, sorting_mask],
+                      x_test[:, sorting_mask],
+                      feature_names=all_aa_names[sorting_mask],
+                      plot_size=(13, 7.5),
+                      show=False,
                       sort=False,
                       color_bar_label="Amino Acid Occurence (length normalised)",
                       cmap=custom_colours)

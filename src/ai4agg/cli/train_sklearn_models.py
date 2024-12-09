@@ -2,7 +2,7 @@ import json
 import logging
 from functools import partial
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import click
 import numpy as np
@@ -10,7 +10,7 @@ import pandas as pd
 import tqdm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
-from sklearn.metrics import f1_score, accuracy_score
+from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sktime.classification.dictionary_based import WEASEL
@@ -73,7 +73,7 @@ def load_data(data_path: Path, loader: str, preprocessor: str, cv_split: int = 0
 
     return dataset_dict
 
-def train(dataset_dict: Dict[str, pd.DataFrame], model: str) -> float:
+def train(dataset_dict: Dict[str, pd.DataFrame], model: str) -> Tuple[Any, Any]:
 
     classifier = MODEL_REGISTRY[model]()
     classifier.fit(np.stack(dataset_dict['train']['input'].to_list()), np.stack(dataset_dict['train']['aggregation'].to_list()))
