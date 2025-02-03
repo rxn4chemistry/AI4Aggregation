@@ -1,8 +1,6 @@
 #!/bin/bash
 
-export HF_DATASETS_CACHE=/dccstor/analytical/hf_cache/ 
-
-top_folder=/dccstor/malberts_storage/UZH/ai4agg/experiments/hf
+top_folder=$1
 
 for model in facebook/esm2_t6_8M_UR50D facebook/esm2_t12_35M_UR50D facebook/esm2_t30_150M_UR50D facebook/esm2_t33_650M_UR50D google-bert/bert-base-uncased google-bert/bert-large-uncased; do
     mkdir -p ${top_folder}/${model}_pretrained
@@ -16,7 +14,7 @@ for model in facebook/esm2_t6_8M_UR50D facebook/esm2_t12_35M_UR50D facebook/esm2
 done
 
 
-for model in google-bert/bert-base-uncased google-bert/bert-large-uncased; do
+for model in facebook/esm2_t6_8M_UR50D facebook/esm2_t12_35M_UR50D facebook/esm2_t30_150M_UR50D facebook/esm2_t33_650M_UR50D google-bert/bert-base-uncased google-bert/bert-large-uncased; do
     mkdir -p ${top_folder}/${model}
     echo ${top_folder}/${model}
 

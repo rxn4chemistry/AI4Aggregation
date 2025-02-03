@@ -1,6 +1,6 @@
 #!/bin/bash
 
-top_folder=/dccstor/malberts_storage/UZH/ai4agg/experiments/sklearn/whole_set_shuffled
+top_folder=$1
 
 for loader in whole_set_shuffled; do
     for preprocessor in sequence one_hot fingerprint occurency; do
