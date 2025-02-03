@@ -1,6 +1,6 @@
 #!/bin/bash
 
-top_folder=/dccstor/malberts_storage/UZH/ai4agg/experiments/sklearn
+top_folder=$1
 
 for loader in reaction_set whole_set; do
     for preprocessor in sequence one_hot fingerprint occurency; do

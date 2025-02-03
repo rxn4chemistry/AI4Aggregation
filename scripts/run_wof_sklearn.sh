@@ -1,6 +1,6 @@
 #!/bin/bash
 
-top_folder=/dccstor/malberts_storage/UZH/ai4agg/experiments/wof
+top_folder=$1
 
 for preprocessor in sequence one_hot fingerprint; do
     for model in rff xgb knn gaussian; do
