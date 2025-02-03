@@ -118,7 +118,7 @@ def main(data_path: Path, output_path: Path, motifs: str, normalise: bool, n_rep
     seed_everything(seed)
 
     logger.info("Loading Data")
-    _, data = load_data(data_path, motifs, normalise, seed)
+    feature_names, data = load_data(data_path, motifs, normalise, seed)
 
     logger.info("Training Models")
     f1_test, x_test, shap_values = train(data, n_repeats)
@@ -126,42 +126,43 @@ def main(data_path: Path, output_path: Path, motifs: str, normalise: bool, n_rep
 
     logger.info("Explaining Predictions")
     plt.figure(dpi=300)
-    all_aa_names = np.array(['Ala (A)',
-                             'Cys (C)',
-                             'Asp (D)',
-                             'Glu (E)',
-                             'Phe (F)',
-                             'Gly (G)',
-                             'His (H)',
-                             'Ile (I)',
-                             'Lys (K)',
-                             'Leu (L)',
-                             'Met (M)',
-                             'Asn (N)',
-                             'Pro (P)',
-                             'Gln (Q)',
-                             'Arg (R)',
-                             'Ser (S)',
-                             'Thr (T)',
-                             'Val (V)',
-                             'Trp (W)',
-                             'Tyr (Y)'])
+    all_aa_names = {'A': 'Ala (A)',
+                    'C': 'Cys (C)',
+                    'D': 'Asp (D)',
+                    'E': 'Glu (E)',
+                    'F': 'Phe (F)',
+                    'G': 'Gly (G)',
+                    'H': 'His (H)',
+                    'I': 'Ile (I)',
+                    'K': 'Lys (K)',
+                    'L': 'Leu (L)',
+                    'M': 'Met (M)',
+                    'N': 'Asn (N)',
+                    'P': 'Pro (P)',
+                    'Q': 'Gln (Q)',
+                    'R': 'Arg (R)',
+                    'S': 'Ser (S)',
+                    'T': 'Thr (T)',
+                    'V': 'Val (V)',
+                    'W': 'Trp (W)',
+                    'Y': 'Tyr (Y)'}
 
-    sorting_mask = [15, 17, 7, 16, 8, 11, 0, 10, 13, 9, 5, 3, 18, 12, 6, 1, 14, 2, 19, 4]
+    feature_names = [all_aa_names[feature_name] if feature_name in all_aa_names else feature_name for feature_name in feature_names]
 
     custom_colours = LinearSegmentedColormap.from_list('custom_cmap', (
                                                         (0.000, (0.537, 0.627, 0.612)),
                                                         (0.500, (0.741, 0.482, 0.424)),
                                                         (1.000, (0.890, 0.706, 0.275))))
 
-    shap.summary_plot(shap_values[:,:,1][:, sorting_mask],
-                      x_test[:, sorting_mask],
-                      feature_names=all_aa_names[sorting_mask],
+    shap.summary_plot(shap_values[:,:,1],
+                      x_test,
+                      feature_names=feature_names,
                       plot_size=(13, 7.5),
                       show=False,
                       sort=False,
                       color_bar_label="Amino Acid Occurence (length normalised)",
-                      cmap=custom_colours)
+                      cmap=custom_colours,
+                      max_display=20)
     plt.xlabel("Impact on Aggregation (the higher the more aggregating)")
-    plt.savefig(output_path / 'explainer_results.svg', dpi=300, bbox_inches='tight')
+    plt.savefig(output_path / 'explainer_results.png', dpi=300, bbox_inches='tight')
 
