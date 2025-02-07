@@ -1,6 +1,6 @@
 # AI4Aggregation
 
-This repo contains code accompanying the publication ["Amino Acid Composition drives Peptide Aggregation: Predicting Aggregation for Improved Synthesis"](to be added), including scripts to reproduce all results.
+This repo contains code accompanying the publication [Amino Acid Composition drives Peptide Aggregation: Predicting Aggregation for Improved Synthesis](https://chemrxiv.org/), including scripts to reproduce all results.
 
 ## Installation
 
