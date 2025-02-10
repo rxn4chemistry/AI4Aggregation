@@ -32,7 +32,7 @@ bash scripts/run_wof_sklearn.sh <Path to Experiment Folder>
 
 ## Explainability
 
-To explain the predictions of the models we use Shap values. To reproduce our results use the following scripts:
+To explain the predictions of the models we use Shap values. To reproduce our results use the following scripts: 
 
 ```console
 poetry run explain_model --data_path data/combined_data.csv --output_path <Path where results should be stored>
