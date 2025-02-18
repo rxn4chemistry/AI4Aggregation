@@ -9,7 +9,7 @@ This repo contains code accompanying the publication [Amino Acid Composition dri
 
 ## Installation
 
-The project was developed and tested on Python 3.10 and utilise poetry as package manager. To install the package run the commands provided below. The installation is expected to take less than five minutes.  
+The project was developed and tested on Python 3.10 and utilises poetry as package manager. To install the package run the commands provided below. The installation is expected to take less than five minutes.  
 
 ```console
 pip install poetry
@@ -47,7 +47,7 @@ As an example run the following. The folder `results/xgb` needs to exist:
 poetry run train_sklearn_model --data_path data/combined_data.csv --output_path results/xgb  --loader whole_set --preprocessor occurency --model xgb
 ```
 
-The expected accuracy of the model is `0.596±0.019`.
+The script takes around a minute to run and the expected accuracy of the model is `0.596±0.019`.
 
 ### Training HuggingFace models
 
