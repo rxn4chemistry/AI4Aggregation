@@ -3,7 +3,7 @@
 This repo contains code accompanying the publication [Amino Acid Composition drives Peptide Aggregation: Predicting Aggregation for Improved Synthesis](https://chemrxiv.org/engage/chemrxiv/article-details/67a9af9ffa469535b9b67865), including scripts to reproduce all results.
 
 <p align='center'>
-  <img src='figure/Graphical Abstract.png' width="1000px">
+  <img src='figure/GraphicalAbstract.png' width="1000px">
 </p>
 
 
@@ -41,13 +41,30 @@ poetry run train_sklearn_model
     --model: Model to train. Choose from: [rff (Random Forest), xgb (XGBoost), knn (K-Nearest Neighbour), gaussian (Gaussian Processes), hc2 (Hive Cote 2), timeforest (Time series forest), weasel (WEASEL)]
 ```
 
+As an example run the following. The folder `results/xgb` needs to exist:
 
+```console
+poetry run train_sklearn_model --data_path data/combined_data.csv --output_path results/xgb  --loader whole_set --preprocessor occurency --model xgb
+```
 
+The expected accuracy of the model is `0.596±0.019`.
+
+### Training HuggingFace models
+
+To train HuggingFace models on the aggregation data use the following script. A GPU is recommended to train the models but at the expense of time the models can also be run locally:
+
+```console
+poetry run train_hf_model 
+    --data_path: Path to UZH/MIT combined dataset
+    --output_path: Path where the result of the training are going to be saved
+    --model: Model to train e.g. facebook/esm2_t33_650M_UR50D. We evaluated ESM 2.0 and BERT.
+    --pretrained: Wether to train the model from scratch or use the pretrained one from HuggingFace. [True False]
+```
 
 
 ## Reproducing Training results
 
-We provide a set of scripts to replicate the results obtained in the paper. All scripts require a path to where the results of the experiments are saved. The HuggingFace models require GPUs to train:
+We provide a set of scripts to replicate the results obtained in the paper. All scripts require a path to where the results of the experiments are saved. A GPU is recommended to reproduce the Transformer based results:
 ```console
 bash scripts/run_hf_models.sh <Path to Experiment Folder>
 bash scripts/run_sklearn_models.sh <Path to Experiment Folder>
