@@ -3,7 +3,7 @@
 This repo contains code accompanying the publication [Amino Acid Composition drives Peptide Aggregation: Predicting Aggregation for Improved Synthesis](https://chemrxiv.org/engage/chemrxiv/article-details/67a9af9ffa469535b9b67865), including scripts to reproduce all results.
 
 <p align='center'>
-  <img src='figure/GraphicalAbstract.png' width="1000px">
+  <img src='figures/GraphicalAbstract.png' width="1000px">
 </p>
 
 
