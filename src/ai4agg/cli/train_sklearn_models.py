@@ -164,7 +164,7 @@ def main(data_path: Path,
             f1.append(f1_result)
             accuracy.append(accuracy_results)
 
-    logger.info(f"F1: {np.mean(f1):.3f}±{np.std(f1):.3f}")
+    logger.info(f"Accuracy: {np.mean(accuracy):.3f}±{np.std(accuracy):.3f}")
         
     with (output_path / 'results.json').open('w') as results_file:
         json.dump({'f1': {'mean': np.mean(f1).astype(float), 'std': np.std(f1).astype(float)}, 'raw_f1': list(f1), 'raw_acc': list(accuracy)}, results_file)
